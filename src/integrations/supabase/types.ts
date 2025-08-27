@@ -44,6 +44,7 @@ export type Database = {
           message: string | null
           payment_id: string | null
           payment_status: string | null
+          txn_id: string | null
         }
         Insert: {
           amount: number
@@ -56,6 +57,7 @@ export type Database = {
           message?: string | null
           payment_id?: string | null
           payment_status?: string | null
+          txn_id?: string | null
         }
         Update: {
           amount?: number
@@ -68,6 +70,7 @@ export type Database = {
           message?: string | null
           payment_id?: string | null
           payment_status?: string | null
+          txn_id?: string | null
         }
         Relationships: [
           {
@@ -85,6 +88,9 @@ export type Database = {
           created_at: string | null
           expires_at: string
           id: string
+          is_active: boolean | null
+          last_payment_txn_id: string | null
+          paid_until: string | null
           payment_id: string | null
           starts_at: string | null
           status: string | null
@@ -95,6 +101,9 @@ export type Database = {
           created_at?: string | null
           expires_at: string
           id?: string
+          is_active?: boolean | null
+          last_payment_txn_id?: string | null
+          paid_until?: string | null
           payment_id?: string | null
           starts_at?: string | null
           status?: string | null
@@ -105,6 +114,9 @@ export type Database = {
           created_at?: string | null
           expires_at?: string
           id?: string
+          is_active?: boolean | null
+          last_payment_txn_id?: string | null
+          paid_until?: string | null
           payment_id?: string | null
           starts_at?: string | null
           status?: string | null
@@ -122,42 +134,54 @@ export type Database = {
       }
       users: {
         Row: {
+          avatar_url: string | null
           bio: string | null
           cover_image_url: string | null
           created_at: string | null
           current_amount: number | null
           display_name: string
+          email: string | null
           goal_amount: number | null
           id: string
           profile_image_url: string | null
+          role: string | null
+          socials: Json | null
           subscription_expires_at: string | null
           subscription_status: string | null
           updated_at: string | null
           username: string
         }
         Insert: {
+          avatar_url?: string | null
           bio?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           current_amount?: number | null
           display_name: string
+          email?: string | null
           goal_amount?: number | null
           id: string
           profile_image_url?: string | null
+          role?: string | null
+          socials?: Json | null
           subscription_expires_at?: string | null
           subscription_status?: string | null
           updated_at?: string | null
           username: string
         }
         Update: {
+          avatar_url?: string | null
           bio?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           current_amount?: number | null
           display_name?: string
+          email?: string | null
           goal_amount?: number | null
           id?: string
           profile_image_url?: string | null
+          role?: string | null
+          socials?: Json | null
           subscription_expires_at?: string | null
           subscription_status?: string | null
           updated_at?: string | null
@@ -173,6 +197,7 @@ export type Database = {
           bank_name: string
           created_at: string | null
           id: string
+          method: string | null
           processed_at: string | null
           status: string | null
           user_id: string
@@ -184,6 +209,7 @@ export type Database = {
           bank_name: string
           created_at?: string | null
           id?: string
+          method?: string | null
           processed_at?: string | null
           status?: string | null
           user_id: string
@@ -195,6 +221,7 @@ export type Database = {
           bank_name?: string
           created_at?: string | null
           id?: string
+          method?: string | null
           processed_at?: string | null
           status?: string | null
           user_id?: string
