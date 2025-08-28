@@ -59,19 +59,40 @@ serve(async (req) => {
       );
     }
 
-    // Generate dummy transaction ID
-    const txnId = `SUB_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    // Generate transaction ID for subscription
+    const txnId = `SUB_${user.id.substring(0, 8)}_${Date.now()}`;
     const subscriptionAmount = 100 * duration_months; // 100 BDT per month
 
-    console.log('Processing creator subscription:', {
+    console.log('Processing creator subscription payment:', {
       user_id: user.id,
       amount: subscriptionAmount,
       duration_months,
       txn_id: txnId
     });
 
-    // Simulate payment processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Call RupantorPay API to initiate payment
+    const rupantorPayResponse = await fetch("https://payment.rupantorpay.com/api/payment/checkout", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "X-API-KEY": Deno.env.get("RUPANTORPAY_API_KEY") ?? "",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        success_url: `${req.headers.get("origin")}/dashboard?payment=success&txn=${txnId}`,
+        cancel_url: `${req.headers.get("origin")}/dashboard?payment=cancelled`,
+        webhook_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/rupantorpay-webhook`,
+        fullname: userProfile.display_name || "TipKoro Creator",
+        email: user.email || "creator@tipkoro.com",
+        amount: subscriptionAmount.toString()
+      })
+    });
+
+    const rupantorPayResult = await rupantorPayResponse.json();
+
+    if (!rupantorPayResult.status) {
+      throw new Error(`RupantorPay API error: ${rupantorPayResult.message || 'Unknown error'}`);
+    }
 
     // Calculate subscription dates
     const today = new Date();
@@ -98,9 +119,9 @@ serve(async (req) => {
         .from('subscriptions')
         .update({
           paid_until: newPaidUntil.toISOString().split('T')[0],
-          is_active: true,
+          is_active: false, // Will be activated via webhook
           last_payment_txn_id: txnId,
-          payment_id: `dummy_payment_${txnId}`,
+          payment_id: rupantorPayResult.payment_id || `rupantorpay_${txnId}`,
           updated_at: new Date().toISOString()
         })
         .eq('id', existingSubscription.id)
@@ -114,10 +135,10 @@ serve(async (req) => {
           user_id: user.id,
           amount: subscriptionAmount,
           paid_until: paidUntil.toISOString().split('T')[0],
-          is_active: true,
+          is_active: false, // Will be activated via webhook
           last_payment_txn_id: txnId,
-          payment_id: `dummy_payment_${txnId}`,
-          status: 'active'
+          payment_id: rupantorPayResult.payment_id || `rupantorpay_${txnId}`,
+          status: 'pending'
         })
         .select()
         .single();
@@ -159,8 +180,8 @@ serve(async (req) => {
         txn_id: txnId,
         subscription_id: subscriptionResult.data.id,
         amount: subscriptionAmount,
-        paid_until: paidUntil.toISOString().split('T')[0],
-        message: "Subscription processed successfully"
+        payment_url: rupantorPayResult.payment_url,
+        message: "Subscription payment initiated, redirecting to payment gateway"
       }),
       {
         status: 200,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,7 @@ interface DonationSummary {
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [donations, setDonations] = useState<DonationSummary>({
@@ -199,7 +200,7 @@ const Dashboard = () => {
                   <p className="text-sm mb-3">
                     Your subscription has expired. Pay 100 BDT monthly to reactivate your profile and accept donations.
                   </p>
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => navigate('/subscription')}>
                     Pay Subscription Fee
                   </Button>
                 </div>
@@ -322,14 +323,14 @@ const Dashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {profile.role === 'creator' && (
                   <>
-                    <Button className="h-auto py-4" variant="outline">
+                    <Button className="h-auto py-4" variant="outline" onClick={() => navigate('/profile/edit')}>
                       <div className="text-center">
                         <Settings className="h-6 w-6 mx-auto mb-2" />
                         <div>Edit Profile</div>
                       </div>
                     </Button>
                     
-                    <Button className="h-auto py-4" variant="outline">
+                    <Button className="h-auto py-4" variant="outline" onClick={() => navigate('/withdrawals')}>
                       <div className="text-center">
                         <CreditCard className="h-6 w-6 mx-auto mb-2" />
                         <div>Request Withdrawal</div>

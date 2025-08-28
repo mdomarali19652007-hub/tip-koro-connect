@@ -10,6 +10,10 @@ import UserProfile from "./pages/UserProfile";
 import DonationPage from "./pages/DonationPage";
 import ThankYou from "./pages/ThankYou";
 import Dashboard from "./pages/Dashboard";
+import ProfileEdit from "./pages/ProfileEdit";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import WithdrawalsPage from "./pages/WithdrawalsPage";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +29,10 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile/edit" element={<ProfileEdit />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/withdrawals" element={<WithdrawalsPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/u/:username" element={<UserProfile />} />
             <Route path="/d/:username" element={<DonationPage />} />
             <Route path="/thankyou/:txnId" element={<ThankYou />} />

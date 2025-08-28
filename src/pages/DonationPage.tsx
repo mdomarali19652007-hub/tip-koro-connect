@@ -101,8 +101,10 @@ const DonationPage = () => {
 
       if (error) throw error;
 
-      // Redirect to success page
-      navigate(`/thankyou/${data.txn_id}`);
+      // Redirect to RupantorPay payment page
+      if (data.payment_url) {
+        window.open(data.payment_url, '_blank');
+      }
     } catch (error) {
       console.error('Donation error:', error);
       toast({

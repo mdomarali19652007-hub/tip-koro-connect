@@ -68,18 +68,39 @@ serve(async (req) => {
       );
     }
 
-    // Generate dummy transaction ID
-    const txnId = `TXN_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    // Generate transaction ID for donation
+    const txnId = `DON_${creator_id.substring(0, 8)}_${Date.now()}`;
 
-    console.log('Processing dummy donation:', {
+    console.log('Processing donation payment:', {
       creator_id,
       amount,
       donor_name: is_anonymous ? '[ANONYMOUS]' : donor_name,
       txn_id: txnId
     });
 
-    // Simulate payment processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Call RupantorPay API to initiate payment
+    const rupantorPayResponse = await fetch("https://payment.rupantorpay.com/api/payment/checkout", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "X-API-KEY": Deno.env.get("RUPANTORPAY_API_KEY") ?? "",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        success_url: `${req.headers.get("origin")}/thankyou/${txnId}`,
+        cancel_url: `${req.headers.get("origin")}/u/${creator.username}`,
+        webhook_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/rupantorpay-webhook`,
+        fullname: is_anonymous ? "Anonymous Donor" : (donor_name || "Anonymous Donor"),
+        email: is_anonymous ? "anonymous@tipkoro.com" : (donor_email || "anonymous@tipkoro.com"),
+        amount: amount.toString()
+      })
+    });
+
+    const rupantorPayResult = await rupantorPayResponse.json();
+
+    if (!rupantorPayResult.status) {
+      throw new Error(`RupantorPay API error: ${rupantorPayResult.message || 'Unknown error'}`);
+    }
 
     // Create donation record
     const { data: donation, error: donationError } = await supabaseService
@@ -91,9 +112,9 @@ serve(async (req) => {
         donor_email: is_anonymous ? null : donor_email,
         message,
         is_anonymous,
-        payment_status: 'completed', // Dummy payment always succeeds
+        payment_status: 'pending', // Will be updated via webhook
         txn_id: txnId,
-        payment_id: `dummy_payment_${txnId}`
+        payment_id: rupantorPayResult.payment_id || `rupantorpay_${txnId}`
       })
       .select()
       .single();
@@ -106,20 +127,7 @@ serve(async (req) => {
       );
     }
 
-    // Update creator's current amount
-    const { error: updateError } = await supabaseService
-      .from('users')
-      .update({ 
-        current_amount: supabaseService.sql`current_amount + ${amount}`,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', creator_id);
-
-    if (updateError) {
-      console.error('Error updating creator balance:', updateError);
-      // Note: In a real implementation, you'd want to handle this more carefully
-      // Perhaps with database transactions or compensation logic
-    }
+    // Don't update creator's balance here - will be done via webhook after payment confirmation
 
     console.log('Donation processed successfully:', {
       donation_id: donation.id,
@@ -133,7 +141,8 @@ serve(async (req) => {
         success: true,
         txn_id: txnId,
         donation_id: donation.id,
-        message: "Donation processed successfully"
+        payment_url: rupantorPayResult.payment_url,
+        message: "Donation initiated, redirecting to payment gateway"
       }),
       {
         status: 200,
